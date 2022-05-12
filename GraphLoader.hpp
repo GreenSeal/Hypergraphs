@@ -15,6 +15,7 @@
 
 #include "Cell_t.hpp"
 #include "Net_t.hpp"
+#include "Part_t.hpp"
 
 class graph_loader_t {
 public:
@@ -31,11 +32,11 @@ public:
         cells_.reserve(num_cells);
         nets_.reserve(num_nets);
 
-        for(int i = 0; i < num_cells; ++i) {
+        for(unsigned long long i = 0; i < num_cells; ++i) {
             cells_.emplace_back(i);
         }
 
-        for(int i = 0; i < num_nets; ++i) {
+        for(unsigned long long i = 0; i < num_nets; ++i) {
 
             if(file_stream_.eof()) {
                 std::cerr << "ERROR: Too little lines for all nets\n";
@@ -68,7 +69,7 @@ public:
                 return;
             }
 
-            for (int i = 0; i < num_cells; ++i) {
+            for (unsigned long long i = 0; i < num_cells; ++i) {
                 file_stream_ >> cells_.at(i).weight;
             }
         }
@@ -85,8 +86,8 @@ public:
         good_bit = true;
     }
 
-    void WriteToFile() {
-        std::string out_file = file_ + "_output";
+    void WriteToFile(const std::unordered_set<size_t>& A, const std::unordered_set<size_t>& B) {
+        std::string out_file = file_ + ".part.2";
         std::ofstream out_file_stream(out_file);
 
         if(!out_file_stream.is_open()) {
@@ -98,24 +99,28 @@ public:
         if(option != 0) out_file_stream << " " << option;
         out_file_stream << "\n";
 
-        for(int i = 0; i < nets_.size(); ++i) {
+        for(unsigned long long i = 0; i < nets_.size(); ++i) {
             if(option == 1 || option == 11) {
                 out_file_stream << nets_.at(i).weight << " ";
             }
 
             for(auto it  = nets_.at(i).cells.begin(); it != std::prev(nets_.at(i).cells.end()); ++it) {
-                out_file_stream << (*it)->id + 1 << " ";
+                if(A.contains((*it)->id))
+                    out_file_stream << 1 << " ";
+                else
+                    out_file_stream << 0 << " ";
             }
-
-            out_file_stream << (*std::prev(nets_.at(i).cells.end()))->id + 1 << "\n";
-
+            if(A.contains((*std::prev(nets_.at(i).cells.end()))->id))
+                out_file_stream << 1 << "\n";
+            else
+                out_file_stream << 0 << "\n";
         }
 
-        if(option == 10 || option == 11) {
-            for(int i = 0; i < cells_.size(); ++i) {
-                out_file_stream << cells_.at(i).weight << "\n";
-            }
-        }
+//        if(option == 10 || option == 11) {
+//            for(int i = 0; i < cells_.size(); ++i) {
+//                out_file_stream << cells_.at(i).weight << "\n";
+//            }
+//        }
     }
 
     bool LoadFirstLine() {
