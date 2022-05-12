@@ -124,8 +124,8 @@ public:
             for(auto& elt : is_fixed)
                 if(elt == 0) ++unfixed_remain;
 
-            if(unfixed_remain%2920 == 0)
-                std::cout << "Processing DoPathStep... " << (292008-unfixed_remain)/292008 << "%\n";
+            //if(unfixed_remain%2920 == 0)
+                //std::cout << "Processing DoPathStep... " << (292008-unfixed_remain)/292008 << "%\n";
         }
 
         best_cut_cost_ = CutCost(best_A_, best_B_);
@@ -218,7 +218,7 @@ public:
     }
 
     std::tuple<size_t, size_t, double, double> run() {
-        std::cout << "Init CutCost: " << CutCost(best_A_, best_B_) << "\n";
+        //std::cout << "Init CutCost: " << CutCost(best_A_, best_B_) << "\n";
 
         size_t start_cutcost = CutCost(best_A_, best_B_);
         const size_t pass_num = 3;
@@ -241,8 +241,8 @@ public:
         std::chrono::duration<double> elapsed_seconds = finish-start;
         double duration = elapsed_seconds.count();
 
-        std::cout << "Balance: " << best_A_.size()/(float)best_B_.size() << "\n";
-        std::cout << "CutSize: " << CutCost(best_A_, best_B_) << "\n";
+        //std::cout << "Balance: " << best_A_.size()/(float)best_B_.size() << "\n";
+        //std::cout << "CutSize: " << CutCost(best_A_, best_B_) << "\n";
 
         return std::tuple<size_t, size_t, double, double>(start_cutcost, finish_cutcost, reduced, duration);
     }
