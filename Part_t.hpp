@@ -22,7 +22,7 @@ public:
         }
     }
 
-    static void FillGain(part_t& A, part_t& B, const std::vector<net_t>& nets, const std::vector<cell_t>& cells) {
+    static void FillGain(part_t& A, part_t& B, const std::vector<net_t>& nets, const std::vector<cell_t>& cells, bool is_mod) {
         //There has a place to be conversion from bucket idx to gain, or more precisely, gain = idx - p_max
 
         for(const auto& net : nets) {
@@ -50,32 +50,38 @@ public:
             if (num_v_in_A == 1 && num_v_in_B == 1) {
                 for(auto cell : net.cells) {
                     if(A.ContainsInSet(cell->id))
-                        UpdateGain(A, cell, 1);
+                        UpdateGain(A, cell, 1, is_mod);
                     else
-                        UpdateGain(B, cell, 1);
+                        UpdateGain(B, cell, 1, is_mod);
                 }
             } else if(num_v_in_B == 0 || num_v_in_A == 0) {
                 for(auto cell : net.cells) {
                     if(A.ContainsInSet(cell->id))
-                        UpdateGain(A, cell, -1);
+                        UpdateGain(A, cell, -1, is_mod);
                     else
-                        UpdateGain(B, cell, -1);
+                        UpdateGain(B, cell, -1, is_mod);
                 }
             } else if(num_v_in_B == 1) {
-                UpdateGain(B, last_v_in_B, 1);
+                UpdateGain(B, last_v_in_B, 1, is_mod);
             } else if(num_v_in_A == 1) {
-                UpdateGain(A, last_v_in_A, 1);
+                UpdateGain(A, last_v_in_A, 1, is_mod);
             }
         }
     }
 
-    static void UpdateGain(part_t& part, std::vector<cell_t>::pointer cell, int sign_of_diff) { //add check if cell is in bucket
+    static void UpdateGain(part_t& part, std::vector<cell_t>::pointer cell, int sign_of_diff, bool is_mod) { //add check if cell is in bucket
         assert(cell != nullptr && "Nullptr cell in function UpdateGain");
         cell_idx_t idx = cell->id;
         int gain = cell->gain;
-        part.bucket_.at(gain + part.p_max).erase(part.cell_ptrs_.at(idx));
-        part.bucket_.at(gain + part.p_max + sign_of_diff).push_back(idx);
-        part.cell_ptrs_.at(idx) = std::prev(part.bucket_.at(gain + part.p_max + sign_of_diff).end());
+        if(is_mod) {
+            part.bucket_.at(gain + part.p_max).erase(part.cell_ptrs_.at(idx));
+            part.bucket_.at(gain + part.p_max + sign_of_diff).push_back(idx);
+            part.cell_ptrs_.at(idx) = std::prev(part.bucket_.at(gain + part.p_max + sign_of_diff).end());
+        } else {
+            part.bucket_.at(gain + part.p_max).erase(part.cell_ptrs_.at(idx));
+            part.bucket_.at(gain + part.p_max + sign_of_diff).push_front(idx);
+            part.cell_ptrs_.at(idx) = part.bucket_.at(gain + part.p_max + sign_of_diff).begin();
+        }
         cell -> gain += sign_of_diff;
     }
 
@@ -116,7 +122,6 @@ public:
     cell_idx_t GetBestVertex() {
         for(size_t best_gain = bucket_.size()-1; best_gain > 0; --best_gain) {
             if (!bucket_.at(best_gain).empty()) {
-                //std::cout << "Hello yopta ";
                 cell_idx_t cell_idx = bucket_.at(best_gain).back();
                 bucket_.at(best_gain).pop_back();
                 cell_ptrs_.at(cell_idx) = bucket_.at(best_gain).end();
@@ -127,7 +132,6 @@ public:
 
         // for best_gain = 0
         if (!bucket_.at(0).empty()) {
-            //std::cout << "Hello yopta ";
             cell_idx_t cell_idx = bucket_.at(0).back();
             bucket_.at(0).pop_back();
             cell_ptrs_.at(cell_idx) = bucket_.at(0).end();

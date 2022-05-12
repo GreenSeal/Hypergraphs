@@ -9,13 +9,15 @@
 #include "Part_t.hpp"
 
 #include<cassert>
+#include <chrono>
 
 class FiducciaMatthesisAlgo {
 public:
 
-    FiducciaMatthesisAlgo(const std::string& filename_) : graph_loader(filename_), best_A_(), best_B_(), rel_diff(0.3), is_fixed(graph_loader.cells_.size(), 0) { //may be avoid copy here
+    FiducciaMatthesisAlgo(const std::string& filename_, bool is_mod = false) : graph_loader(filename_), best_A_(), best_B_(), rel_diff(0.3),
+    is_fixed(graph_loader.cells_.size(), 0), is_mod_(is_mod) {
         for(size_t i = 0; i < graph_loader.cells_.size()/2; ++i) {
-            best_A_.insert(graph_loader.cells_.at(i).id);
+            best_A_.insert(graph_loader.cells_.at(i).id) ;
         }
 
         for(size_t j = graph_loader.cells_.size()/2; j < graph_loader.cells_.size(); ++j) {
@@ -27,12 +29,19 @@ public:
         //then fill bucket_
     }
 
-    void DoPathStep(part_t& A, part_t& B) { //may be avoid copy here
+    void DoPathStep(part_t& A, part_t& B, auto start) { //may be avoid copy here
 
         int cur_diff_gain = 0;
         int best_diff_gain = 0;
 
         while(IsNewVertexAvailable(A, B)) {
+
+            auto finish = std::chrono::steady_clock::now();
+            std::chrono::duration<double> elapsed_seconds = finish-start;
+            if(elapsed_seconds > std::chrono::duration<double>(420.0)) {
+                break;
+            }
+
             cell_t &v = graph_loader.cells_.at(GetBestVertex(A, B));//there we must immediately fix v
             is_fixed.at(v.id) = 1;
             bool from_A_to_b = false;
@@ -85,12 +94,12 @@ public:
                         if(after_gain != before_gain) {
                                 cell->gain += after_gain - before_gain;
 
-                                std::cout << "darova nahui\n";
+                                //std::cout << "BAM\n";
 
                                 if(A.ContainsInSet(cell->id)) {
-                                    part_t::UpdateGain(A, cell, after_gain - before_gain);
+                                    part_t::UpdateGain(A, cell, after_gain - before_gain, is_mod_);
                                 } else if(B.ContainsInSet(cell->id)) {
-                                    part_t::UpdateGain(B, cell, after_gain - before_gain);
+                                    part_t::UpdateGain(B, cell, after_gain - before_gain, is_mod_);
                                 } else {
                                     std::cerr << "ERROR: cell with updating gain doesn't contain nor A neither B\n";
                                 }
@@ -122,59 +131,6 @@ public:
         best_cut_cost_ = CutCost(best_A_, best_B_);
 
     }
-
-//    std::vector<int> ComputeGainsForNet(const part_t& A, const part_t& B, const net_t& net) {
-//        std::vector<int> cell_gains{};
-//        cell_gains.reserve(net.cells.size());
-//
-//        size_t num_v_in_A = 0;
-//        size_t num_v_in_B = 0;
-//
-//        if(net.cells.size() == 1) return {0};
-//
-//        for(const auto& v : net.cells) {
-//            if(A.ContainsInSet(v->id)) ++num_v_in_A;
-//            else if(B.ContainsInSet(v->id)) ++num_v_in_B;
-//            else throw std::range_error("ERROR: v must lie in A or in B");
-//        }
-//
-//        if(num_v_in_A == 1 && num_v_in_B == 1) {
-//            for(const auto& cell : net.cells) {
-//                if(!is_fixed.at(cell->id))
-//                    cell_gains.push_back(1);
-//            }
-//        } else if(num_v_in_A == 0 || num_v_in_B == 0) {
-//            for(const auto& cell: net.cells) {
-//                if(!is_fixed.at(cell->id))
-//                    cell_gains.push_back(-1);
-//            }
-//        } else if (num_v_in_B == 1) {
-//            for(const auto& cell: net.cells) {
-//                if(!is_fixed.at(cell->id)) {
-//                    if (B.ContainsInSet(cell->id))
-//                        cell_gains.push_back(1);
-//                    else
-//                        cell_gains.push_back(0);
-//                }
-//            }
-//        } else if(num_v_in_A == 1) {
-//            for(const auto& cell: net.cells) {
-//                if(!is_fixed.at(cell->id)) {
-//                    if (A.ContainsInSet(cell->id))
-//                        cell_gains.push_back(1);
-//                    else
-//                        cell_gains.push_back(0);
-//                }
-//            }
-//        } else {
-//            for(const auto& cell: net.cells) {
-//                if(!is_fixed.at(cell->id))
-//                    cell_gains.push_back(0);
-//            }
-//        }
-//
-//        return cell_gains;
-//    }
 
     int ComputeGainsForNet(const part_t& A, const part_t& B, const cell_t& cell, size_t num_v_in_A, size_t num_v_in_B) {
         //cell MUST contains in net
@@ -225,11 +181,11 @@ public:
 
     bool IsNewVertexAvailable(const part_t& A, const part_t& B) {
         if(A.SetSize()/static_cast<float>(B.SetSize()) < 1-rel_diff) {
-            return (!B.IsBucketEmpty())? true : false;
+            return !B.IsBucketEmpty();
         } else if(B.SetSize()/static_cast<float>(A.SetSize()) < 1-rel_diff) {
-            return (!A.IsBucketEmpty())? true: false;
+            return !A.IsBucketEmpty();
         } else {
-            return (!A.IsBucketEmpty() || !B.IsBucketEmpty())? true : false;
+            return (!A.IsBucketEmpty() || !B.IsBucketEmpty());
         }
     }
 
@@ -261,18 +217,34 @@ public:
         return is_fixed.at(id) == 1;
     }
 
-    void run() {
-        const size_t pass_num = 1;
+    std::tuple<size_t, size_t, double, double> run() {
+        std::cout << "Init CutCost: " << CutCost(best_A_, best_B_) << "\n";
+
+        size_t start_cutcost = CutCost(best_A_, best_B_);
+        const size_t pass_num = 3;
+
+        auto start = std::chrono::steady_clock::now();
+
         for(size_t i = 0; i < pass_num; ++i) {
             part_t A{graph_loader.nets_.size(), graph_loader.cells_.size(), best_A_};
             part_t B{graph_loader.nets_.size(), graph_loader.cells_.size(), best_B_};
-            part_t::FillGain(A, B, graph_loader.nets_, graph_loader.cells_);
-            DoPathStep(A, B);
-            std::cout << "Processing... " << static_cast<float>(i/pass_num)*100.0 << "% complete\n";
+            part_t::FillGain(A, B, graph_loader.nets_, graph_loader.cells_, is_mod_);
+            DoPathStep(A, B, start);
+            std::cout << "Processing... " << i/static_cast<float>(pass_num)*100.0 << "% complete\n";
         }
+
+        size_t finish_cutcost = CutCost(best_A_, best_B_);
+
+        double reduced = (start_cutcost - finish_cutcost)/(double)finish_cutcost;
+
+        auto finish = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = finish-start;
+        double duration = elapsed_seconds.count();
 
         std::cout << "Balance: " << best_A_.size()/(float)best_B_.size() << "\n";
         std::cout << "CutSize: " << CutCost(best_A_, best_B_) << "\n";
+
+        return std::tuple<size_t, size_t, double, double>(start_cutcost, finish_cutcost, reduced, duration);
     }
 
     graph_loader_t graph_loader;
@@ -284,6 +256,8 @@ public:
     std::vector<uint8_t> is_fixed;
 
     double rel_diff;
+
+    bool is_mod_;
 };
 
 #endif //HYPERGRAPHS_FIDUCCIAMATTHESISALGO_HPP
