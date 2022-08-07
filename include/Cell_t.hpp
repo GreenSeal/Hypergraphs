@@ -14,8 +14,8 @@ struct cell_t {
 
     std::vector<std::vector<net_t>::pointer> nets;
     size_t id;
-    size_t weight;
     int gain;
+    size_t weight;
 };
 
 #endif //HYPERGRAPHS_CELL_T_HPP
