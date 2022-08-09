@@ -11,16 +11,16 @@ target_link_libraries(FM FMAlgo)
 file(GLOB BENCHMARKS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set benchmark_set/ISPD98_ibm*.hgr benchmark_set/dac2012_superblue*.hgr)
 
 foreach(BENCHMARK ${BENCHMARKS})
-    list(APPEND BENCHMARKS_TARGETS ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.part.2)
+    list(APPEND BENCHMARKS_TARGETS ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.usual.part.2 ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.mod.part.2)
     message(${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK})
-#    add_custom_command(
-#            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.part.2
-#            BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.result
-#            COMMAND FM ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}
-#            MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}
-#    )
     add_custom_command(
-            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.part.2
+            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.usual.part.2
+            BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.result
+            COMMAND FM ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}
+            MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}
+    )
+    add_custom_command(
+            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.mod.part.2
             BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}.mod.result
             COMMAND FM ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK} -m
             MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/benchmark_set/${BENCHMARK}
