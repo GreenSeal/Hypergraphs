@@ -14,12 +14,12 @@ The second option runs the algorithm with the following modification: when recal
 Executable generate 2 files: *.part.2 and .result. The first contains representation of final graph. The format is hMetis output format. The second file contains useful runtime metrics, such as start and final cut size, relative cut size reduce and execution time. This file is used later in the script scripts/collect_statistics.py for collecting benchmark statistics.
 
 ## Benchmarks
-For testing this programm I used benchmarks from ... . Benchmarks run through CMakeLists.txt using BENCHMARKS_RUN build target. 
+For testing this programm I used benchmarks from https://zenodo.org/record/291466#.YvGk6rlRWV9 . Benchmarks run through CMakeLists.txt using BENCHMARKS_RUN build target. 
 At the moment I've been running benchmarks starting with `ISPD98_ibm` and `dac2012_superblue`. 
 If you want to change that, just change file regular expression at CMakeLists.txt:11.
-Benchmarks must be contained in the folder benchmark_set in repository directory.
+Benchmarks must be contained in the folder `benchmark_set` in repository directory.
 
 ## Useful links
-Fiduccia-Mattheisys article:
-Benchmarks:
-hMetis format:
+* Fiduccia-Mattheisys article: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1585498
+* Benchmarks: https://zenodo.org/record/291466#.YvGk6rlRWV9
+* hMetis format: https://course.ece.cmu.edu/~ee760/760docs/hMetisManual.pdf
